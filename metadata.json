@@ -1,0 +1,5 @@
+{
+  "name": "BCMHammer Jesse's mod",
+  "description": "A web-based interface for viewing and simulating GM Body Control Module (BCM) flashing, inspired by BCMHammer.",
+  "requestFramePermissions": []
+}
