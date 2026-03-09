@@ -49,7 +49,7 @@ export default function DTCPanel({ isConnected }: DTCPanelProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-black p-4">
+    <div className="flex flex-col h-full bg-black">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-zinc-200 flex items-center">
           <AlertTriangle className="w-5 h-5 mr-2 text-amber-500" />

@@ -82,7 +82,7 @@ export default function LiveDataPanel({ isConnected }: LiveDataPanelProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 overflow-y-auto h-full bg-black">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto h-full bg-black">
       {pids.map(pid => (
         <div key={pid.id} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex flex-col justify-between relative overflow-hidden group hover:border-zinc-700 transition-colors">
           <div className="flex justify-between items-start mb-2 relative z-10">

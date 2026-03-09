@@ -94,7 +94,7 @@ export default function TerminalPanel({ isConnected, onSend, logs }: TerminalPan
   };
 
   return (
-    <div className="flex h-full bg-black font-mono text-sm">
+    <div className="flex h-full bg-black font-mono text-sm border border-zinc-800 rounded-lg overflow-hidden">
       {/* Main Terminal Area */}
       <div className="flex-1 flex flex-col min-w-0 border-r border-zinc-800">
         <div className="flex items-center justify-between p-2 bg-zinc-900 border-b border-zinc-800">
@@ -155,7 +155,7 @@ export default function TerminalPanel({ isConnected, onSend, logs }: TerminalPan
       </div>
 
       {/* Macros Sidebar */}
-      <div className="w-64 bg-zinc-900 flex flex-col border-l border-zinc-800">
+      <div className="w-64 bg-zinc-900 flex flex-col">
         <div className="p-3 border-b border-zinc-800 flex justify-between items-center">
           <h3 className="text-zinc-300 font-semibold">Macros</h3>
           <button 
