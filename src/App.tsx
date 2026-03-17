@@ -31,6 +31,7 @@ import { BmsPanel } from './components/BmsPanel';
 import { EpbPanel } from './components/EpbPanel';
 import { SasPanel } from './components/SasPanel';
 import { DpfPanel } from './components/DpfPanel';
+import { DealershipToolsPanel } from './components/DealershipToolsPanel';
 import VcxNanoPanel from './components/VcxNanoPanel';
 import J2534DeviceSelectorModal from './components/J2534DeviceSelectorModal';
 import { J2534ProxyClient, MockJ2534, J2534, IJ2534, J2534Device } from './lib/j2534';
@@ -43,7 +44,7 @@ export default function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [fileData, setFileData] = useState<Uint8Array | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'analyzer' | 'scanner' | 'actuators' | 'emissions' | 'hex' | 'live' | 'dtc' | 'graph' | 'terminal' | 'advanced' | 'prototype' | 'eeprom' | 'coding' | 'immo' | 'service' | 'pmi' | 'oemflash' | 'oemflasher' | 'adas' | 'injectors' | 'topology' | 'tech2' | 'proxy' | 'bms' | 'epb' | 'sas' | 'dpf' | 'vcx-nano'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'analyzer' | 'scanner' | 'actuators' | 'emissions' | 'hex' | 'live' | 'dtc' | 'graph' | 'terminal' | 'advanced' | 'prototype' | 'eeprom' | 'coding' | 'immo' | 'service' | 'pmi' | 'oemflash' | 'oemflasher' | 'adas' | 'injectors' | 'topology' | 'tech2' | 'proxy' | 'bms' | 'epb' | 'sas' | 'dpf' | 'vcx-nano' | 'dealership'>('dashboard');
   
   // J2534 State
   const [j2534Client, setJ2534Client] = useState<IJ2534 | null>(null);
@@ -879,6 +880,19 @@ export default function App() {
             </div>
 
             <div>
+              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">OEM Integration</h3>
+              <div className="space-y-1">
+                <SidebarButton 
+                  active={activeTab === 'dealership'} 
+                  onClick={() => setActiveTab('dealership')} 
+                  icon={Briefcase} 
+                  label="Dealership Tools" 
+                  color="text-amber-500"
+                />
+              </div>
+            </div>
+
+            <div>
               <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">Programming</h3>
               <div className="space-y-1">
                 <SidebarButton 
@@ -1153,6 +1167,9 @@ export default function App() {
             )}
             {activeTab === 'dpf' && (
                 <DpfPanel isConnected={status === 'connected'} />
+            )}
+            {activeTab === 'dealership' && (
+                <DealershipToolsPanel isConnected={status === 'connected'} />
             )}
         </div>
         <div className="h-64 p-4 pt-0 min-h-0">

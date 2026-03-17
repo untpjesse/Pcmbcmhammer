@@ -11,9 +11,9 @@ if exist "dist" rmdir /s /q "dist"
 if exist "release" rmdir /s /q "release"
 
 echo.
-echo [2/5] Forcing Visual Studio 2026 for C++ compilation...
-set GYP_MSVS_VERSION=2026
-call npm config set msvs_version 2026
+echo [2/5] Preparing build environment...
+set GYP_MSVS_VERSION=
+set npm_config_msvs_version=
 
 echo.
 echo [3/5] Updating node-gyp build tools...
