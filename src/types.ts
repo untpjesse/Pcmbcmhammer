@@ -14,6 +14,7 @@ export interface DeviceInfo {
   voltage: number;
   vin: string;
   osid: string;
+  name?: string;
 }
 
 export interface PID {
@@ -29,4 +30,20 @@ export interface DTC {
   code: string;
   description: string;
   status: 'Current' | 'History' | 'Pending';
+}
+
+declare global {
+  interface Window {
+    electron: {
+      serial: {
+        list: () => Promise<any[]>;
+        open: (config: { path: string; baudRate: number }) => Promise<boolean>;
+        close: () => Promise<boolean>;
+        write: (data: Uint8Array | number[]) => Promise<boolean>;
+        onData: (callback: (data: Uint8Array) => void) => void;
+        onError: (callback: (error: string) => void) => void;
+        removeAllListeners: () => void;
+      };
+    };
+  }
 }

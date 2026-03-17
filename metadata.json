@@ -1,5 +1,7 @@
 {
-  "name": "BCMHammer Jesse's mod",
-  "description": "A web-based interface for viewing and simulating GM Body Control Module (BCM) flashing, inspired by BCMHammer.",
-  "requestFramePermissions": []
+  "name": "VCX Nano Professional Suite",
+  "description": "Professional diagnostic and programming suite for VCX Nano and J2534 compatible devices.",
+  "requestFramePermissions": [
+    "serial"
+  ]
 }

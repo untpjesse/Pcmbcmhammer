@@ -9,8 +9,9 @@ interface SettingsModalProps {
     baudRate: number;
     deviceType: string;
     moduleType: ModuleType;
+    j2534ProxyUrl: string;
   };
-  onSave: (newSettings: { baudRate: number; deviceType: string; moduleType: ModuleType }) => void;
+  onSave: (newSettings: { baudRate: number; deviceType: string; moduleType: ModuleType; j2534ProxyUrl: string }) => void;
 }
 
 export default function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsModalProps) {
@@ -25,6 +26,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSave }: Set
       baudRate: Number(formData.get('baudRate')),
       deviceType: formData.get('deviceType') as string,
       moduleType: formData.get('moduleType') as ModuleType,
+      j2534ProxyUrl: formData.get('j2534ProxyUrl') as string,
     });
     onClose();
   };
@@ -86,6 +88,20 @@ export default function SettingsModal({ isOpen, onClose, settings, onSave }: Set
               <option value="460800">460800 (High Speed)</option>
               <option value="921600">921600 (Ultra High)</option>
             </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-zinc-400">J2534 Proxy URL</label>
+            <input 
+              name="j2534ProxyUrl"
+              type="text"
+              defaultValue={settings.j2534ProxyUrl}
+              placeholder="ws://127.0.0.1:2534"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-300 focus:outline-none focus:border-emerald-500 font-mono text-sm"
+            />
+            <p className="text-[10px] text-zinc-500">
+              WebSocket address of your local J2534 Proxy server.
+            </p>
           </div>
 
           <div className="pt-4 flex justify-end space-x-2">
