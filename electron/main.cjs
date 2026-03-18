@@ -1,12 +1,22 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const isDev = require('electron-is-dev');
-const { SerialPort } = require('serialport');
+
+const isDev = !app.isPackaged;
 
 let mainWindow;
 let activePort = null;
+let SerialPort;
 
-function createWindow() {
+async function initSerialPort() {
+  if (!SerialPort) {
+    const serialportModule = await import('serialport');
+    SerialPort = serialportModule.SerialPort;
+  }
+}
+
+async function createWindow() {
+  await initSerialPort();
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -95,12 +105,12 @@ ipcMain.handle('serial:write', async (event, data) => {
   });
 });
 
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
+  await createWindow();
 
-  app.on('activate', () => {
+  app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      await createWindow();
     }
   });
 });
