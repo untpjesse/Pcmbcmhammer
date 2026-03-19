@@ -12,7 +12,7 @@ if exist "dist" rmdir /s /q "dist"
 if exist "release" rmdir /s /q "release"
 
 echo.
-echo [2/3] Installing pre-built Electron binaries...
+echo [2/3] Installing dependencies and building native modules from source...
 call npm install
 
 echo.

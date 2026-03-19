@@ -13,12 +13,13 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "electron:dev": "concurrently \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
   "build": {
-    "npmRebuild": false,
-    "buildDependenciesFromSource": false,
-    "nodeGypRebuild": false,
+    "npmRebuild": true,
+    "buildDependenciesFromSource": true,
+    "nodeGypRebuild": true,
     "appId": "com.bcmhammer.app",
     "productName": "BCMHammer",
     "directories": {
