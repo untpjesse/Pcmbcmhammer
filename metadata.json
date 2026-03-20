@@ -1,5 +1,5 @@
 {
-  "name": "VCX Nano Professional Suite",
+  "name": "VCX Nano Pro",
   "description": "Professional diagnostic and programming suite for VCX Nano and J2534 compatible devices.",
   "requestFramePermissions": [
     "serial"
