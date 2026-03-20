@@ -2,7 +2,7 @@
   "name": "react-example",
   "private": true,
   "version": "0.0.0",
-  "description": "BCMHammer - Vehicle Diagnostics and Programming Tool",
+  "description": "Professional diagnostic and programming suite for VCX Nano and J2534 compatible devices.",
   "author": "BCMHammer Team",
   "main": "electron/main.cjs",
   "homepage": "./",
@@ -21,7 +21,7 @@
     "buildDependenciesFromSource": true,
     "nodeGypRebuild": true,
     "appId": "com.bcmhammer.app",
-    "productName": "BCMHammer",
+    "productName": "VCX Nano Pro",
     "directories": {
       "output": "release"
     },

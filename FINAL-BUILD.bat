@@ -1,11 +1,11 @@
 @echo off
 echo ===================================================
-echo   BCMHammer Final Windows Build
+echo   VCX Nano Pro Final Windows Build
 echo ===================================================
 
 echo.
 echo [1/3] Cleaning old files...
-taskkill /F /IM BCMHammer.exe /T >nul 2>&1
+taskkill /F /IM "VCX Nano Pro.exe" /T >nul 2>&1
 if exist "node_modules" rmdir /s /q "node_modules"
 if exist "package-lock.json" del /f /q "package-lock.json"
 if exist "dist" rmdir /s /q "dist"

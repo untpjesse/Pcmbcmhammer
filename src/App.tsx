@@ -34,6 +34,7 @@ import { DpfPanel } from './components/DpfPanel';
 import { DealershipToolsPanel } from './components/DealershipToolsPanel';
 import VcxNanoPanel from './components/VcxNanoPanel';
 import J2534DeviceSelectorModal from './components/J2534DeviceSelectorModal';
+import SerialDeviceSelectorModal from './components/SerialDeviceSelectorModal';
 import { J2534ProxyClient, MockJ2534, J2534, IJ2534, J2534Device } from './lib/j2534';
 import { Activity, Download, Upload, Zap, Settings, Database, FileCode, AlertTriangle, Gauge, Terminal, Cpu, Beaker, List, Network, Power, Leaf, FlaskConical, Sliders, Key, Wrench, Replace, FileArchive, Briefcase, Target, Monitor, Laptop, Battery, Flame, Wind, Compass, Thermometer, ShieldCheck, Microscope, Binary, Car, Syringe, RefreshCw } from 'lucide-react';
 
@@ -49,6 +50,7 @@ export default function App() {
   // J2534 State
   const [j2534Client, setJ2534Client] = useState<IJ2534 | null>(null);
   const [isJ2534ModalOpen, setIsJ2534ModalOpen] = useState(false);
+  const [isSerialModalOpen, setIsSerialModalOpen] = useState(false);
   const [j2534Devices, setJ2534Devices] = useState<J2534Device[]>([]);
   const [pendingJ2534Client, setPendingJ2534Client] = useState<IJ2534 | null>(null);
   const [j2534DeviceId, setJ2534DeviceId] = useState<number | null>(null);
@@ -83,7 +85,7 @@ export default function App() {
   // WebSerial State
   const [port, setPort] = useState<SerialPort | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
-  const isWebSerialSupported = 'serial' in navigator;
+  const isWebSerialSupported = ('serial' in navigator) || (!!window.electron?.serial);
   const [isSimulation, setIsSimulation] = useState(false);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
@@ -103,16 +105,31 @@ export default function App() {
   useEffect(() => {
     addLog('VCX Nano Professional Suite initialized.', 'info');
     if (isWebSerialSupported) {
-      addLog('WebSerial API supported.', 'success');
+      addLog('Hardware interface bridge active.', 'success');
     } else {
       addLog('WebSerial API not supported in this browser.', 'warning');
     }
     addLog('Ready to connect to J2534 or Serial interface.', 'info');
     
+    if (window.electron?.serial) {
+      window.electron.serial.onData((data) => {
+        const hex = Array.from(data)
+          .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+          .join(' ');
+        addLog(`RX: ${hex}`, 'info');
+      });
+      window.electron.serial.onError((error) => {
+        addLog(`Serial Error: ${error}`, 'error');
+      });
+    }
+
     return () => {
       // Cleanup on unmount
       if (port && port.readable) {
         port.close().catch(console.error);
+      }
+      if (window.electron?.serial) {
+        window.electron.serial.removeAllListeners();
       }
     };
   }, []);
@@ -148,7 +165,13 @@ export default function App() {
 
   const handleConnectSerial = async () => {
     if (!isWebSerialSupported) {
-      addLog('Web Serial is not supported in this browser. Please use Chrome or Edge.', 'error');
+      addLog('Serial communication is not supported in this environment.', 'error');
+      return;
+    }
+
+    // If in Electron, use the Electron bridge
+    if (window.electron?.serial) {
+      setIsSerialModalOpen(true);
       return;
     }
     
@@ -205,6 +228,37 @@ export default function App() {
       } else {
         addLog(`Connection failed: ${error.message || error}`, 'error');
       }
+    }
+  };
+
+  const handleSerialDeviceSelect = async (device: any) => {
+    setIsSerialModalOpen(false);
+    try {
+      setLastError(null);
+      setStatus('connecting');
+      addLog(`Opening ${device.path} at ${settings.baudRate} baud...`, 'info');
+      
+      const success = await window.electron.serial.open({
+        path: device.path,
+        baudRate: settings.baudRate
+      });
+
+      if (success) {
+        setStatus('connected');
+        setIsSimulation(false);
+        setLastConnectionMethod('serial');
+        addLog(`Connected to ${device.path} via native bridge.`, 'success');
+        setDeviceInfo({
+          protocol: 'Serial (Native)',
+          voltage: 0,
+          vin: 'Unknown',
+          osid: 'Unknown',
+          name: device.path
+        });
+      }
+    } catch (error: any) {
+      addLog(`Native connection failed: ${error}`, 'error');
+      setStatus('disconnected');
     }
   };
 
@@ -428,6 +482,14 @@ export default function App() {
 
   const handleDisconnect = async () => {
     setLastError(null);
+    if (window.electron?.serial && status === 'connected') {
+      await window.electron.serial.close();
+      setStatus('disconnected');
+      setDeviceInfo(null);
+      addLog('Native serial port closed', 'warning');
+      return;
+    }
+
     if (j2534Client) {
       if (j2534Client instanceof J2534ProxyClient) {
          j2534Client.disconnect();
@@ -547,6 +609,14 @@ export default function App() {
     } else {
       // Real WebSerial Read Logic (Placeholder)
       addLog('Sending Read Command...', 'info');
+      
+      if (window.electron?.serial && status === 'connected') {
+        const data = [0x6C, 0x10, 0xF0, 0x01, 0x00];
+        await window.electron.serial.write(data);
+        addLog(`TX: ${data.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')}`, 'info');
+        return;
+      }
+
       if (port && port.writable) {
         const writer = port.writable.getWriter();
         try {
@@ -624,6 +694,10 @@ export default function App() {
         addLog(`J2534 Write error: ${error.message || error}`, 'error');
       }
     } else {
+       if (window.electron?.serial && status === 'connected') {
+         addLog('Write not implemented for native serial yet. Protocol implementation required.', 'warning');
+         return;
+       }
        addLog('Write not implemented for WebSerial yet. Protocol implementation required.', 'warning');
     }
   };
@@ -693,6 +767,11 @@ export default function App() {
         addLog(`J2534 Write/Read error: ${error.message || error}`, 'error');
       }
     } else {
+      if (window.electron?.serial && status === 'connected') {
+        await window.electron.serial.write(hexBytes);
+        addLog(`TX: ${hexBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')}`, 'info');
+        return;
+      }
       if (port && port.writable) {
         const writer = port.writable.getWriter();
         try {
@@ -1182,6 +1261,12 @@ export default function App() {
         onClose={() => setSettingsOpen(false)}
         settings={settings}
         onSave={setSettings}
+      />
+
+      <SerialDeviceSelectorModal
+        isOpen={isSerialModalOpen}
+        onClose={() => setIsSerialModalOpen(false)}
+        onSelect={handleSerialDeviceSelect}
       />
 
       <J2534DeviceSelectorModal
