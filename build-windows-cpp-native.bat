@@ -48,6 +48,7 @@ if exist "package-lock.json" del /f /q "package-lock.json"
 
 echo.
 echo [3/7] Installing dependencies...
+if exist ".npmrc" del /f /q ".npmrc"
 call npm install
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install dependencies.
