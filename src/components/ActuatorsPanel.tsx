@@ -117,16 +117,16 @@ export function ActuatorsPanel({ isConnected }: ActuatorsPanelProps) {
     { id: 'tpms_light', name: 'TPMS Warning Light', icon: AlertTriangle, state: false, category: 'Chassis' },
   ]);
 
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
   const toggleActuator = (id: string) => {
     if (!isConnected) return;
     
-    // Set processing state
-    setActuators(prev => prev.map(a => a.id === id ? { ...a, isProcessing: true } : a));
-    
-    // Simulate network delay and command execution
-    setTimeout(() => {
-      setActuators(prev => prev.map(a => a.id === id ? { ...a, state: !a.state, isProcessing: false } : a));
-    }, 800 + Math.random() * 1000);
+    // In a real implementation, this would send a J2534 command to toggle the actuator
+    // For now, we just inform the user that this requires specific module protocol implementation
+    console.log(`Actuator toggle requested for: ${id}`);
+    setStatusMessage('Bi-directional control requires specific module protocol implementation.');
+    setTimeout(() => setStatusMessage(null), 5000);
   };
 
   const filteredActuators = actuators.filter(a => a.category === activeCategory);
@@ -163,6 +163,14 @@ export function ActuatorsPanel({ isConnected }: ActuatorsPanelProps) {
           </button>
         ))}
       </div>
+
+      {/* Status Message */}
+      {statusMessage && (
+        <div className="mx-6 mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center text-rose-400 text-sm">
+          <ShieldAlert className="w-4 h-4 mr-2" />
+          {statusMessage}
+        </div>
+      )}
 
       <div className="p-6 flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

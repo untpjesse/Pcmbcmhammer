@@ -15,17 +15,12 @@ export function EepromEditorPanel({ isConnected }: EepromEditorPanelProps) {
     if (!isConnected) return;
     setIsReading(true);
     
-    // Simulate reading EEPROM
+    // In a real implementation, this would use the J2534 API to read memory
+    // For now, we just clear the data and stop the loading state
     setTimeout(() => {
-      const len = parseInt(length, 16) || 256;
-      let mockData = '';
-      for (let i = 0; i < len; i++) {
-        mockData += Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase() + ' ';
-        if ((i + 1) % 16 === 0) mockData += '\n';
-      }
-      setData(mockData.trim());
       setIsReading(false);
-    }, 1500);
+      setData('Memory read requires specific module protocol implementation.');
+    }, 500);
   };
 
   return (

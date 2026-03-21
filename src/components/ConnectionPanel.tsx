@@ -13,8 +13,6 @@ interface ConnectionPanelProps {
   onScanJ2534: () => void;
   onConnectVcxNano: () => void;
   onDisconnect: () => void;
-  onSimulate: () => void;
-  onSimulateJ2534: () => void;
   isWebSerialSupported: boolean;
 }
 
@@ -29,8 +27,6 @@ export default function ConnectionPanel({
   onScanJ2534,
   onConnectVcxNano,
   onDisconnect, 
-  onSimulate,
-  onSimulateJ2534,
   isWebSerialSupported 
 }: ConnectionPanelProps) {
   const getStatusStyles = () => {
@@ -215,29 +211,6 @@ export default function ConnectionPanel({
               <Zap className="w-4 h-4 mr-2" />
               VCX Nano Direct
             </button>
-          </div>
-        )}
-
-        {status === 'disconnected' && (
-          <div className="space-y-2 pt-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={onSimulate}
-                title="Start a simulated ELM327 interface for testing"
-                className="w-full py-2 px-2 rounded-lg font-bold text-[9px] uppercase tracking-tighter transition-all flex items-center justify-center bg-slate-800/50 hover:bg-slate-800 text-slate-500 hover:text-slate-300 border border-slate-700/50"
-              >
-                <Zap className="w-3 h-3 mr-1.5" />
-                ELM Sim
-              </button>
-              <button
-                onClick={onSimulateJ2534}
-                title="Start a simulated J2534 interface for testing"
-                className="w-full py-2 px-2 rounded-lg font-bold text-[9px] uppercase tracking-tighter transition-all flex items-center justify-center bg-slate-800/50 hover:bg-slate-800 text-slate-500 hover:text-slate-300 border border-slate-700/50"
-              >
-                <Cpu className="w-3 h-3 mr-1.5" />
-                J2534 Sim
-              </button>
-            </div>
           </div>
         )}
       </div>

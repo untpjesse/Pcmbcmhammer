@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Pause, Play, Trash2, Activity } from 'lucide-react';
 
 interface CanFrame {
@@ -17,52 +17,6 @@ export function AnalyzerPanel({ isConnected }: AnalyzerPanelProps) {
   const [frames, setFrames] = useState<Record<string, CanFrame>>({});
   const [isSniffing, setIsSniffing] = useState(false);
   const [filterId, setFilterId] = useState('');
-  const simulationInterval = useRef<NodeJS.Timeout | null>(null);
-
-  // Simulate incoming CAN traffic
-  useEffect(() => {
-    if (isSniffing && isConnected) {
-      simulationInterval.current = setInterval(() => {
-        const ids = ['01A', '02B', '1F0', '2C4', '3E8', '4F1', '5A0', '7E0', '7E8'];
-        const randomId = ids[Math.floor(Math.random() * ids.length)];
-        
-        const newData = Array.from({ length: 8 }, () => 
-          Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase()
-        );
-
-        setFrames(prev => {
-          const existing = prev[randomId];
-          const changed = Array(8).fill(false);
-          
-          if (existing) {
-            // Check which bytes changed
-            for (let i = 0; i < 8; i++) {
-              changed[i] = existing.data[i] !== newData[i];
-            }
-          }
-
-          return {
-            ...prev,
-            [randomId]: {
-              id: randomId,
-              data: newData,
-              count: (existing?.count || 0) + 1,
-              lastSeen: Date.now(),
-              changed
-            }
-          };
-        });
-      }, 50); // High frequency CAN traffic
-    } else {
-      if (simulationInterval.current) {
-        clearInterval(simulationInterval.current);
-      }
-    }
-
-    return () => {
-      if (simulationInterval.current) clearInterval(simulationInterval.current);
-    };
-  }, [isSniffing, isConnected]);
 
   // Auto-stop if disconnected
   useEffect(() => {

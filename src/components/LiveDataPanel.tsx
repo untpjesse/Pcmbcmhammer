@@ -25,50 +25,8 @@ export default function LiveDataPanel({ isConnected }: LiveDataPanelProps) {
   useEffect(() => {
     if (!isConnected) return;
 
-    const interval = setInterval(() => {
-      setPids(prev => prev.map(pid => {
-        let newValue = pid.value;
-        const noise = (Math.random() - 0.5) * 2; // Random fluctuation
-
-        switch (pid.id) {
-          case 'rpm':
-            newValue = Math.max(600, Math.min(8000, pid.value + (Math.random() - 0.5) * 100));
-            // Simulate idle hunting or revving
-            if (Math.random() > 0.95) newValue += 500; 
-            break;
-          case 'speed':
-            // Slowly accelerate/decelerate
-            newValue = Math.max(0, Math.min(160, pid.value + (Math.random() - 0.5) * 5));
-            break;
-          case 'ect':
-            // Slowly warm up to 195
-            if (pid.value < 195) newValue += 0.5;
-            else newValue += (Math.random() - 0.5);
-            break;
-          case 'iat':
-             newValue = 85 + (Math.random() - 0.5) * 2;
-             break;
-          case 'map':
-             // Inverse to throttle roughly
-             newValue = 35 + (Math.random() * 10);
-             break;
-          case 'tps':
-             // Random throttle blips
-             if (Math.random() > 0.9) newValue = Math.random() * 100;
-             else newValue = Math.max(0, pid.value - 5);
-             break;
-          case 'batt':
-             newValue = 13.8 + (Math.random() - 0.5) * 0.2;
-             break;
-          default:
-             newValue += noise;
-        }
-
-        return { ...pid, value: Number(newValue.toFixed(1)) };
-      }));
-    }, 100);
-
-    return () => clearInterval(interval);
+    // In a real implementation, this would poll the vehicle for PIDs
+    // For now, we keep the values static as we've removed the simulation
   }, [isConnected]);
 
   if (!isConnected) {

@@ -82,30 +82,12 @@ export function AdvancedPanel({ isConnected, onSendCommand }: AdvancedPanelProps
     setFlashProgress(0);
     setFlashError('');
 
-    try {
-      // Simulate Request Download (Service 34)
-      sendHex([0x34, 0x00, 0x44, 0x00, 0x01, 0x00, 0x00]);
-      await new Promise(r => setTimeout(r, 500));
-
-      const totalBlocks = 50; 
-      for (let i = 1; i <= totalBlocks; i++) {
-        // Easter egg: simulate an error if the filename contains "error"
-        if (firmwareFile.name.toLowerCase().includes('error') && i === 25) {
-           throw new Error("Negative Response: 7F 36 72 (General Programming Failure)");
-        }
-
-        sendHex([0x36, i & 0xFF, 0xAA, 0xBB, 0xCC, 0xDD]); 
-        setFlashProgress((i / totalBlocks) * 100);
-        await new Promise(r => setTimeout(r, 100)); 
-      }
-
-      // Simulate Transfer Exit (Service 37)
-      sendHex([0x37]);
-      setFlashStatus('success');
-    } catch (err: any) {
+    // In a real implementation, this would use the J2534 API to flash the file
+    // For now, we just inform the user that this requires specific module protocol implementation
+    setTimeout(() => {
       setFlashStatus('error');
-      setFlashError(err.message || 'An unknown error occurred during flashing.');
-    }
+      setFlashError('ECU Flashing requires official backend integration and specific module protocol implementation.');
+    }, 1000);
   };
 
   return (

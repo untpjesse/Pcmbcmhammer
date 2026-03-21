@@ -30,23 +30,9 @@ export function EmissionsPanel({ isConnected }: EmissionsPanelProps) {
     if (!isConnected) return;
     setIsRefreshing(true);
     
-    // Simulate reading OBD2 Mode 01 PID 01
+    // In a real implementation, this would read OBD2 Mode 01 PID 01
+    // For now, we just stop the loading state
     setTimeout(() => {
-      setMonitors(prev => prev.map(m => {
-        // Randomly assign statuses for simulation
-        const rand = Math.random();
-        let status: 'complete' | 'incomplete' | 'na' = 'na';
-        
-        if (['mis', 'fuel', 'comp'].includes(m.id)) {
-          status = 'complete'; // Usually complete continuously
-        } else {
-          if (rand > 0.6) status = 'complete';
-          else if (rand > 0.3) status = 'incomplete';
-          else status = 'na'; // Not supported by vehicle
-        }
-        
-        return { ...m, status };
-      }));
       setIsRefreshing(false);
     }, 1000);
   };

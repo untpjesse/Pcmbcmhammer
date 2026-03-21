@@ -17,33 +17,10 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
     setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
   };
 
-  const simulateAction = (actionName: string, duration: number = 3000) => {
+  const handleAction = (actionName: string) => {
     if (!isConnected) return;
-    setActionState('programming');
-    setProgress(0);
-    setLogs([]);
-    addLog(`Starting ${actionName}...`);
-    addLog('Initializing J2534 PassThru interface...');
-    
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setActionState('success');
-          addLog(`${actionName} completed successfully.`);
-          return 100;
-        }
-        
-        // Add random logs based on progress
-        if (prev === 20) addLog('Authenticating with OEM servers...');
-        if (prev === 40) addLog('Downloading calibration files...');
-        if (prev === 60) addLog('Erasing flash memory...');
-        if (prev === 80) addLog('Writing new blocks...');
-        if (prev === 90) addLog('Verifying checksums...');
-        
-        return prev + (100 / (duration / 100));
-      });
-    }, 100);
+    addLog(`Error: ${actionName} requires official OEM backend integration.`);
+    addLog('This feature is currently a UI placeholder.');
   };
 
   const renderGmSps2 = () => (
@@ -60,8 +37,8 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
-          onClick={() => simulateAction('Module Programming (PCM)', 5000)}
-          disabled={!isConnected || actionState === 'programming'}
+          onClick={() => handleAction('Module Programming (PCM)')}
+          disabled={!isConnected}
           className="bg-zinc-900 border border-zinc-700 hover:border-blue-500 p-4 rounded-lg text-left transition-colors disabled:opacity-50"
         >
           <Download className="w-6 h-6 text-blue-400 mb-2" />
@@ -70,8 +47,8 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
         </button>
 
         <button
-          onClick={() => simulateAction('Calibration Update (TCM)', 4000)}
-          disabled={!isConnected || actionState === 'programming'}
+          onClick={() => handleAction('Calibration Update (TCM)')}
+          disabled={!isConnected}
           className="bg-zinc-900 border border-zinc-700 hover:border-blue-500 p-4 rounded-lg text-left transition-colors disabled:opacity-50"
         >
           <RefreshCw className="w-6 h-6 text-blue-400 mb-2" />
@@ -96,8 +73,8 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
-          onClick={() => simulateAction('Network Scan & DTC Read', 2000)}
-          disabled={!isConnected || actionState === 'programming'}
+          onClick={() => handleAction('Network Scan & DTC Read')}
+          disabled={!isConnected}
           className="bg-zinc-900 border border-zinc-700 hover:border-sky-500 p-4 rounded-lg text-left transition-colors disabled:opacity-50"
         >
           <Network className="w-6 h-6 text-sky-400 mb-2" />
@@ -106,8 +83,8 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
         </button>
 
         <button
-          onClick={() => simulateAction('PATS Security Access', 6000)}
-          disabled={!isConnected || actionState === 'programming'}
+          onClick={() => handleAction('PATS Security Access')}
+          disabled={!isConnected}
           className="bg-zinc-900 border border-zinc-700 hover:border-sky-500 p-4 rounded-lg text-left transition-colors disabled:opacity-50"
         >
           <ShieldCheck className="w-6 h-6 text-sky-400 mb-2" />
@@ -132,8 +109,8 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
-          onClick={() => simulateAction('Health Check', 3000)}
-          disabled={!isConnected || actionState === 'programming'}
+          onClick={() => handleAction('Health Check')}
+          disabled={!isConnected}
           className="bg-zinc-900 border border-zinc-700 hover:border-red-500 p-4 rounded-lg text-left transition-colors disabled:opacity-50"
         >
           <AlertTriangle className="w-6 h-6 text-red-400 mb-2" />
@@ -142,8 +119,8 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
         </button>
 
         <button
-          onClick={() => simulateAction('Customize Setting', 2000)}
-          disabled={!isConnected || actionState === 'programming'}
+          onClick={() => handleAction('Customize Setting')}
+          disabled={!isConnected}
           className="bg-zinc-900 border border-zinc-700 hover:border-red-500 p-4 rounded-lg text-left transition-colors disabled:opacity-50"
         >
           <Settings className="w-6 h-6 text-red-400 mb-2" />
@@ -223,8 +200,8 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
-                    onClick={() => simulateAction('All DTC Check', 2500)}
-                    disabled={!isConnected || actionState === 'programming'}
+                    onClick={() => handleAction('All DTC Check')}
+                    disabled={!isConnected}
                     className="bg-zinc-900 border border-zinc-700 hover:border-zinc-500 p-4 rounded-lg text-left transition-colors disabled:opacity-50"
                   >
                     <Network className="w-6 h-6 text-zinc-400 mb-2" />
@@ -235,22 +212,9 @@ export function J2534OemPanel({ isConnected }: J2534OemPanelProps) {
               </div>
             )}
 
-            {/* Progress and Logs Section */}
-            {(actionState === 'programming' || actionState === 'success') && (
+            {/* Logs Section */}
+            {logs.length > 0 && (
               <div className="mt-8 bg-zinc-950/50 border border-zinc-800 rounded-xl p-6">
-                <div className="flex justify-between text-xs font-medium mb-2">
-                  <span className={actionState === 'success' ? 'text-emerald-400' : 'text-indigo-400'}>
-                    {actionState === 'success' ? 'Operation Complete' : 'Processing...'}
-                  </span>
-                  <span className="text-zinc-300">{Math.round(progress)}%</span>
-                </div>
-                <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden mb-4">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${actionState === 'success' ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                    style={{ width: `${progress}%` }}
-                  ></div>
-                </div>
-
                 <div className="bg-black/50 rounded-lg p-3 h-40 overflow-y-auto font-mono text-xs text-zinc-400 space-y-1 border border-zinc-800">
                   {logs.map((log, i) => (
                     <div key={i}>{log}</div>

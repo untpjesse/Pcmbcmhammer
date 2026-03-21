@@ -27,18 +27,10 @@ export function OemFlasherPanel({ isConnected }: OemFlasherPanelProps) {
     setFlashStatus('flashing');
     setFlashProgress(0);
 
-    // Simulate flashing process
-    const interval = setInterval(() => {
-      setFlashProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsFlashing(false);
-          setFlashStatus('success');
-          return 100;
-        }
-        return prev + (Math.random() * 5);
-      });
-    }, 500);
+    // In a real implementation, this would use the J2534 API to flash the file
+    setFlashStatus('error');
+    setFlashProgress(0);
+    setIsFlashing(false);
   };
 
   return (
@@ -131,6 +123,12 @@ export function OemFlasherPanel({ isConnected }: OemFlasherPanelProps) {
                     style={{ width: `${Math.min(100, flashProgress)}%` }}
                   ></div>
                 </div>
+                {flashStatus === 'error' && (
+                  <div className="flex items-center justify-center text-red-400 text-sm mt-4 pt-4 border-t border-zinc-800">
+                    <AlertCircle className="w-5 h-5 mr-2" />
+                    OEM Flashing requires official backend integration.
+                  </div>
+                )}
                 {flashStatus === 'success' && (
                   <div className="flex items-center justify-center text-emerald-400 text-sm mt-4 pt-4 border-t border-zinc-800">
                     <CheckCircle2 className="w-5 h-5 mr-2" />

@@ -29,32 +29,8 @@ export default function GraphPanel({ isConnected }: GraphPanelProps) {
   useEffect(() => {
     if (!isConnected || isPaused) return;
 
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const timeOffset = (now - startTimeRef.current) / 1000;
-
-      // Simulate data generation based on previous values or simple functions
-      setData(prevData => {
-        const lastPoint = prevData[prevData.length - 1] || { rpm: 800, speed: 0, ect: 190, tps: 0, map: 30 };
-        
-        // Generate somewhat realistic looking data
-        const newPoint: DataPoint = {
-          time: Number(timeOffset.toFixed(1)),
-          rpm: Math.max(600, Math.min(7000, lastPoint.rpm + (Math.random() - 0.5) * 100)),
-          speed: Math.max(0, Math.min(120, lastPoint.speed + (Math.random() - 0.5) * 2)),
-          ect: Math.max(180, Math.min(220, lastPoint.ect + (Math.random() - 0.5) * 0.5)),
-          tps: Math.max(0, Math.min(100, (Math.sin(timeOffset / 2) + 1) * 50 + (Math.random() * 10))),
-          map: Math.max(20, Math.min(100, 30 + (Math.random() * 5) + (lastPoint.tps * 0.5))), // MAP follows TPS roughly
-        };
-
-        // Keep last 50 points
-        const newData = [...prevData, newPoint];
-        if (newData.length > 50) newData.shift();
-        return newData;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
+    // In a real implementation, this would poll the vehicle for PIDs and update the graph
+    // For now, we stop the simulation
   }, [isConnected, isPaused]);
 
   const togglePid = (pidId: string) => {

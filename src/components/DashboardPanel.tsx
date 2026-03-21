@@ -93,60 +93,13 @@ export function DashboardPanel({
   const [speed, setSpeed] = useState(0);
   const [temp, setTemp] = useState(0);
   const [voltage, setVoltage] = useState(0);
-  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isSimulating && isConnected) {
-      // Base values
-      let currentRpm = 800;
-      let currentSpeed = 0;
-      let currentTemp = 85;
-      let currentVoltage = 13.8;
-      
-      let accelerating = true;
-
-      interval = setInterval(() => {
-        // Simulate driving cycle
-        if (accelerating) {
-          currentRpm += Math.random() * 400;
-          currentSpeed += Math.random() * 3;
-          if (currentRpm > 6000) {
-            currentRpm = 4000; // Shift gear
-          }
-          if (currentSpeed > 120) accelerating = false;
-        } else {
-          currentRpm -= Math.random() * 300;
-          currentSpeed -= Math.random() * 2;
-          if (currentRpm < 800) currentRpm = 800 + Math.random() * 100;
-          if (currentSpeed < 0) {
-            currentSpeed = 0;
-            accelerating = true;
-          }
-        }
-
-        currentTemp = 85 + (currentRpm / 8000) * 15 + (Math.random() * 2 - 1);
-        currentVoltage = 13.8 + (currentRpm > 1000 ? 0.4 : 0) + (Math.random() * 0.2 - 0.1);
-
-        setRpm(currentRpm);
-        setSpeed(currentSpeed);
-        setTemp(currentTemp);
-        setVoltage(currentVoltage);
-      }, 100);
-    } else {
-      setRpm(0);
-      setSpeed(0);
-      setTemp(0);
-      setVoltage(0);
-    }
-
-    return () => clearInterval(interval);
-  }, [isSimulating, isConnected]);
-
-  // Auto-stop simulation if disconnected
-  useEffect(() => {
-    if (!isConnected) setIsSimulating(false);
+    // In a real implementation, this would poll the ECU via J2534 or Serial
+    setRpm(0);
+    setSpeed(0);
+    setTemp(0);
+    setVoltage(0);
   }, [isConnected]);
 
   return (
@@ -201,23 +154,11 @@ export function DashboardPanel({
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          {!isConnected ? (
+          {!isConnected && (
             <div className="flex items-center space-x-2 px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-lg border border-amber-500/20">
               <AlertCircle className="w-4 h-4" />
               <span className="text-[10px] font-bold uppercase tracking-wider">Interface Offline</span>
             </div>
-          ) : (
-            <button
-              onClick={() => setIsSimulating(!isSimulating)}
-              className={`flex items-center px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                isSimulating 
-                  ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/30 shadow-lg shadow-rose-500/10' 
-                  : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 shadow-lg shadow-emerald-500/10'
-              }`}
-            >
-              <Power className="w-4 h-4 mr-2" />
-              {isSimulating ? 'Terminate Stream' : 'Initialize Stream'}
-            </button>
           )}
         </div>
       </div>
@@ -268,10 +209,10 @@ export function DashboardPanel({
           </h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Throttle Position', value: isSimulating ? Math.round((rpm / 8000) * 100) : 0, unit: '%' },
-              { label: 'Engine Load', value: isSimulating ? Math.round((rpm / 8000) * 80 + 10) : 0, unit: '%' },
-              { label: 'Intake Air Temp', value: isSimulating ? 35 : 0, unit: '°C' },
-              { label: 'Mass Air Flow', value: isSimulating ? Math.round((rpm / 8000) * 150) : 0, unit: 'g/s' },
+              { label: 'Throttle Position', value: 0, unit: '%' },
+              { label: 'Engine Load', value: 0, unit: '%' },
+              { label: 'Intake Air Temp', value: 0, unit: '°C' },
+              { label: 'Mass Air Flow', value: 0, unit: 'g/s' },
             ].map((stat, i) => (
               <div key={i} className="hardware-card p-4 bg-slate-900/30 flex flex-col group hover:border-slate-500 transition-colors">
                 <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2 group-hover:text-slate-400">{stat.label}</span>

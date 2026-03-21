@@ -35,7 +35,7 @@ import { DealershipToolsPanel } from './components/DealershipToolsPanel';
 import VcxNanoPanel from './components/VcxNanoPanel';
 import J2534DeviceSelectorModal from './components/J2534DeviceSelectorModal';
 import SerialDeviceSelectorModal from './components/SerialDeviceSelectorModal';
-import { J2534ProxyClient, MockJ2534, J2534, IJ2534, J2534Device } from './lib/j2534';
+import { J2534ProxyClient, J2534, IJ2534, J2534Device } from './lib/j2534';
 import { Activity, Download, Upload, Zap, Settings, Database, FileCode, AlertTriangle, Gauge, Terminal, Cpu, Beaker, List, Network, Power, Leaf, FlaskConical, Sliders, Key, Wrench, Replace, FileArchive, Briefcase, Target, Monitor, Laptop, Battery, Flame, Wind, Compass, Thermometer, ShieldCheck, Microscope, Binary, Car, Syringe, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -86,7 +86,6 @@ export default function App() {
   const [port, setPort] = useState<SerialPort | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const isWebSerialSupported = ('serial' in navigator) || (!!window.electron?.serial);
-  const [isSimulation, setIsSimulation] = useState(false);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     setLogs(prev => [...prev, {
@@ -200,7 +199,6 @@ export default function App() {
       
       setPort(selectedPort);
       setStatus('connected');
-      setIsSimulation(false);
       setLastConnectionMethod('serial');
       addLog('Serial port connected successfully.', 'success');
       
@@ -245,7 +243,6 @@ export default function App() {
 
       if (success) {
         setStatus('connected');
-        setIsSimulation(false);
         setLastConnectionMethod('serial');
         addLog(`Connected to ${device.path} via native bridge.`, 'success');
         setDeviceInfo({
@@ -262,57 +259,6 @@ export default function App() {
     }
   };
 
-  const handleSimulateConnection = () => {
-    setIsSimulation(true);
-    setStatus('connecting');
-    addLog('Initiating simulated connection...', 'info');
-    
-    setTimeout(() => {
-      addLog('Interface found: OBDX Pro VT (Simulated)', 'success');
-      addLog('Scanning bus for modules...', 'info');
-      
-      setTimeout(() => {
-        setStatus('connected');
-        setDeviceInfo({
-          protocol: 'VPW 4x',
-          voltage: 12.4,
-          vin: '1GNDxxxxxxxxxxxxx',
-          osid: '12212156'
-        });
-        addLog('Connected to PCM (P01)', 'success');
-        addLog('VIN: 1GNDxxxxxxxxxxxxx', 'info');
-        addLog('OSID: 12212156', 'info');
-      }, 1500);
-    }, 1500);
-  };
-
-  const handleSimulateJ2534Connection = () => {
-    setIsSimulation(true);
-    setStatus('connecting');
-    addLog('Loading J2534 PassThru API...', 'info');
-    
-    setTimeout(() => {
-      addLog('PassThruOpen() - Success', 'success');
-      addLog('Interface found: Tactrix OpenPort 2.0 (Simulated)', 'success');
-      addLog('PassThruConnect(ProtocolID: CAN) - Success', 'success');
-      addLog('PassThruIoctl(CLEAR_TX_BUFFER) - Success', 'info');
-      addLog('PassThruIoctl(CLEAR_RX_BUFFER) - Success', 'info');
-      
-      setTimeout(() => {
-        setStatus('connected');
-        setDeviceInfo({
-          protocol: 'ISO15765 (CAN)',
-          voltage: 13.8,
-          vin: '1G1RC6E49BUxxxxxx',
-          osid: '12643248'
-        });
-        addLog('Connected to ECM (E38)', 'success');
-        addLog('VIN: 1G1RC6E49BUxxxxxx', 'info');
-        addLog('OSID: 12643248', 'info');
-      }, 1500);
-    }, 1500);
-  };
-
   const handleConnectVcxNano = async () => {
     setStatus('connecting');
     addLog(`Establishing connection to VCX Nano via J2534 Proxy...`, 'info');
@@ -326,8 +272,8 @@ export default function App() {
       addLog('WebSocket bridge established.', 'success');
     } catch (err: any) {
       addLog(`Proxy bridge failed: ${err.message}`, 'error');
-      addLog('Falling back to J2534 Mock API for demonstration...', 'warning');
-      client = new MockJ2534(addLog);
+      setStatus('disconnected');
+      return;
     }
 
     try {
@@ -362,8 +308,8 @@ export default function App() {
       addLog('Connected to J2534 Proxy WebSocket.', 'success');
     } catch (err: any) {
       addLog(`Proxy connection failed: ${err.message}`, 'error');
-      addLog('Falling back to J2534 Mock API for demonstration...', 'warning');
-      client = new MockJ2534(addLog);
+      setStatus('disconnected');
+      return;
     }
 
     try {
@@ -503,13 +449,7 @@ export default function App() {
       return;
     }
 
-    if (isSimulation) {
-      setStatus('disconnected');
-      setDeviceInfo(null);
-      setIsSimulation(false);
-      addLog('Disconnected from simulated interface', 'warning');
-    } else {
-      if (port) {
+    if (port) {
         try {
           if (readerRef.current) {
             await readerRef.current.cancel();
@@ -525,7 +465,6 @@ export default function App() {
           addLog(`Error disconnecting: ${error}`, 'error');
         }
       }
-    }
   };
 
   const handleFileUpload = (file: File) => {
@@ -547,65 +486,11 @@ export default function App() {
       return;
     }
 
-    if (isSimulation) {
-      addLog('Starting Read Operation (Simulated)...', 'info');
-      addLog('Requesting Seed...', 'info');
-      setTimeout(() => {
-          addLog('Key sent. Unlocked.', 'success');
-          addLog('Reading flash memory (0x000000 - 0x080000)...', 'info');
-          // Simulate progress
-          let progress = 0;
-          const interval = setInterval(() => {
-              progress += 10;
-              if (progress >= 100) {
-                  clearInterval(interval);
-                  addLog('Read Complete. Checksum verified.', 'success');
-                  // Create a dummy file for demonstration if none loaded
-                  if (!fileData) {
-                      const dummyData = new Uint8Array(512 * 1024); // 512KB
-                      for(let i=0; i<dummyData.length; i++) dummyData[i] = Math.floor(Math.random() * 256);
-                      setFileData(dummyData);
-                      setFileName('read_pcm.bin');
-                      setActiveTab('hex');
-                  }
-              }
-          }, 200);
-      }, 1000);
-    } else if (j2534Client) {
+    if (j2534Client) {
       addLog('Starting Read Operation via J2534...', 'info');
-      try {
-        // Simulate reading process via J2534 API
-        addLog('PassThruWriteMsgs: Requesting Security Access (Seed)...', 'info');
-        await j2534Client.PassThruWriteMsgs(j2534ChannelId || 1, [{ ProtocolID: 6, RxStatus: 0, TxFlags: 0, Timestamp: 0, DataSize: 2, ExtraDataIndex: 0, Data: [0x27, 0x01] }], 1000);
-        
-        setTimeout(async () => {
-          addLog('PassThruWriteMsgs: Sending Key...', 'info');
-          await j2534Client.PassThruWriteMsgs(j2534ChannelId || 1, [{ ProtocolID: 6, RxStatus: 0, TxFlags: 0, Timestamp: 0, DataSize: 6, ExtraDataIndex: 0, Data: [0x27, 0x02, 0xAA, 0xBB, 0xCC, 0xDD] }], 1000);
-          
-          addLog('Security Access Granted. Reading memory blocks...', 'success');
-          
-          let progress = 0;
-          const interval = setInterval(async () => {
-            progress += 20;
-            // Simulate reading memory blocks
-            await j2534Client.PassThruWriteMsgs(j2534ChannelId || 1, [{ ProtocolID: 6, RxStatus: 0, TxFlags: 0, Timestamp: 0, DataSize: 3, ExtraDataIndex: 0, Data: [0x23, 0x00, 0x00] }], 1000);
-            
-            if (progress >= 100) {
-              clearInterval(interval);
-              addLog('Read Complete. Checksum verified.', 'success');
-              if (!fileData) {
-                const dummyData = new Uint8Array(512 * 1024);
-                for(let i=0; i<dummyData.length; i++) dummyData[i] = Math.floor(Math.random() * 256);
-                setFileData(dummyData);
-                setFileName('read_pcm_j2534.bin');
-                setActiveTab('hex');
-              }
-            }
-          }, 500);
-        }, 1000);
-      } catch (error: any) {
-        addLog(`J2534 Read error: ${error.message || error}`, 'error');
-      }
+      addLog('Protocol implementation required for specific module read.', 'warning');
+      // In a real implementation, this would involve a sequence of PassThruWriteMsgs and PassThruReadMsgs
+      // following the specific module's protocol (e.g., UDS, GMLAN, etc.)
     } else {
       // Real WebSerial Read Logic (Placeholder)
       addLog('Sending Read Command...', 'info');
@@ -646,53 +531,11 @@ export default function App() {
         return;
     }
 
-    if (isSimulation) {
-      addLog('Starting Write Operation (Simulated)...', 'warning');
-      addLog('Erasing flash...', 'info');
-      setTimeout(() => {
-          addLog('Writing banks...', 'info');
-          let progress = 0;
-          const interval = setInterval(() => {
-              progress += 5;
-              if (progress >= 100) {
-                  clearInterval(interval);
-                  addLog('Write Complete. Verifying...', 'success');
-                  setTimeout(() => addLog('Verification Successful.', 'success'), 500);
-              }
-          }, 200);
-      }, 1500);
-    } else if (j2534Client) {
+    if (j2534Client) {
       addLog('Starting Write Operation via J2534...', 'warning');
-      try {
-        addLog('PassThruWriteMsgs: Requesting Security Access (Seed)...', 'info');
-        await j2534Client.PassThruWriteMsgs(j2534ChannelId || 1, [{ ProtocolID: 6, RxStatus: 0, TxFlags: 0, Timestamp: 0, DataSize: 2, ExtraDataIndex: 0, Data: [0x27, 0x01] }], 1000);
-        
-        setTimeout(async () => {
-          addLog('PassThruWriteMsgs: Sending Key...', 'info');
-          await j2534Client.PassThruWriteMsgs(j2534ChannelId || 1, [{ ProtocolID: 6, RxStatus: 0, TxFlags: 0, Timestamp: 0, DataSize: 6, ExtraDataIndex: 0, Data: [0x27, 0x02, 0xAA, 0xBB, 0xCC, 0xDD] }], 1000);
-          
-          addLog('Security Access Granted. Erasing flash...', 'info');
-          await j2534Client.PassThruWriteMsgs(j2534ChannelId || 1, [{ ProtocolID: 6, RxStatus: 0, TxFlags: 0, Timestamp: 0, DataSize: 4, ExtraDataIndex: 0, Data: [0x31, 0x01, 0xFF, 0x00] }], 1000);
-          
-          setTimeout(() => {
-            addLog('Writing banks...', 'info');
-            let progress = 0;
-            const interval = setInterval(async () => {
-              progress += 10;
-              // Simulate writing blocks
-              await j2534Client.PassThruWriteMsgs(j2534ChannelId || 1, [{ ProtocolID: 6, RxStatus: 0, TxFlags: 0, Timestamp: 0, DataSize: 4, ExtraDataIndex: 0, Data: [0x36, 0x01, 0x00, 0x00] }], 1000);
-              
-              if (progress >= 100) {
-                clearInterval(interval);
-                addLog('Write Complete. Verifying...', 'success');
-                setTimeout(() => addLog('Verification Successful.', 'success'), 500);
-              }
-            }, 500);
-          }, 2000);
-        }, 1000);
-      } catch (error: any) {
-        addLog(`J2534 Write error: ${error.message || error}`, 'error');
-      }
+      addLog('Protocol implementation required for specific module write.', 'error');
+      // In a real implementation, this would involve a sequence of PassThruWriteMsgs
+      // following the specific module's protocol (e.g., UDS, GMLAN, etc.)
     } else {
        if (window.electron?.serial && status === 'connected') {
          addLog('Write not implemented for native serial yet. Protocol implementation required.', 'warning');
@@ -711,37 +554,7 @@ export default function App() {
       return;
     }
 
-    if (isSimulation) {
-      addLog(`TX: ${command.toUpperCase()}`, 'info');
-      // Simulate realistic responses based on UDS/OBD2 commands
-      setTimeout(() => {
-        const cmdByte = hexBytes[0];
-        let response = '';
-        
-        if (cmdByte === 0x1A) { // Read Data By Identifier
-          response = `RX: ${((cmdByte + 0x40).toString(16).toUpperCase())} ${hexBytes.slice(1).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')} 31 32 33 34 35 36 37 38 39 30`;
-        } else if (cmdByte === 0x11) { // ECU Reset
-          response = `RX: ${((cmdByte + 0x40).toString(16).toUpperCase())} ${hexBytes.slice(1).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')}`;
-        } else if (cmdByte === 0x19) { // Read DTC
-          response = `RX: ${((cmdByte + 0x40).toString(16).toUpperCase())} ${hexBytes.slice(1).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')} 01 01 01 03 00 04 20`;
-        } else if (cmdByte === 0x22) { // Read Data By Identifier (UDS)
-          response = `RX: ${((cmdByte + 0x40).toString(16).toUpperCase())} ${hexBytes.slice(1).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')} 00 00 00 00`;
-        } else if (cmdByte === 0x27) { // Security Access
-          if (hexBytes[1] % 2 !== 0) { // Request Seed
-            response = `RX: ${((cmdByte + 0x40).toString(16).toUpperCase())} ${hexBytes[1].toString(16).padStart(2, '0').toUpperCase()} AA BB CC DD`;
-          } else { // Send Key
-            response = `RX: ${((cmdByte + 0x40).toString(16).toUpperCase())} ${hexBytes[1].toString(16).padStart(2, '0').toUpperCase()}`;
-          }
-        } else if (cmdByte === 0x3E) { // Tester Present
-          response = `RX: ${((cmdByte + 0x40).toString(16).toUpperCase())} 00`;
-        } else {
-          // Negative response: 7F <cmd> 11 (service not supported)
-          response = `RX: 7F ${cmdByte.toString(16).padStart(2, '0').toUpperCase()} 11`;
-        }
-        
-        addLog(response, 'info');
-      }, 150);
-    } else if (j2534Client) {
+    if (j2534Client) {
       addLog(`TX: ${command.toUpperCase()}`, 'info');
       try {
         const msg = {
@@ -815,8 +628,6 @@ export default function App() {
             onScanJ2534={handleScanJ2534}
             onConnectVcxNano={handleConnectVcxNano}
             onDisconnect={handleDisconnect}
-            onSimulate={handleSimulateConnection}
-            onSimulateJ2534={handleSimulateJ2534Connection}
             isWebSerialSupported={isWebSerialSupported}
           />
 
