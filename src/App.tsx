@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { ConnectionStatus, DeviceInfo, LogEntry, ModuleType } from './types';
 import ConnectionPanel from './components/ConnectionPanel';
 import ProxyGuide from './components/ProxyGuide';
@@ -32,11 +32,14 @@ import { EpbPanel } from './components/EpbPanel';
 import { SasPanel } from './components/SasPanel';
 import { DpfPanel } from './components/DpfPanel';
 import { DealershipToolsPanel } from './components/DealershipToolsPanel';
+import { BcmProgrammingPanel } from './components/BcmProgrammingPanel';
+import { DelphiToolsPanel } from './components/DelphiToolsPanel';
+import { SeedKeyPanel } from './components/SeedKeyPanel';
 import VcxNanoPanel from './components/VcxNanoPanel';
 import J2534DeviceSelectorModal from './components/J2534DeviceSelectorModal';
 import SerialDeviceSelectorModal from './components/SerialDeviceSelectorModal';
 import { J2534ProxyClient, J2534, IJ2534, J2534Device } from './lib/j2534';
-import { Activity, Download, Upload, Zap, Settings, Database, FileCode, AlertTriangle, Gauge, Terminal, Cpu, Beaker, List, Network, Power, Leaf, FlaskConical, Sliders, Key, Wrench, Replace, FileArchive, Briefcase, Target, Monitor, Laptop, Battery, Flame, Wind, Compass, Thermometer, ShieldCheck, Microscope, Binary, Car, Syringe, RefreshCw } from 'lucide-react';
+import { Activity, Download, Upload, Zap, Settings, Database, FileCode, AlertTriangle, Gauge, Terminal, Cpu, Beaker, List, Network, Power, Leaf, FlaskConical, Sliders, Key, Wrench, Replace, FileArchive, Briefcase, Target, Monitor, Laptop, Battery, Flame, Wind, Compass, Thermometer, ShieldCheck, Microscope, Binary, Car, Syringe, RefreshCw, Settings2 } from 'lucide-react';
 
 export default function App() {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
@@ -45,7 +48,7 @@ export default function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [fileData, setFileData] = useState<Uint8Array | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'analyzer' | 'scanner' | 'actuators' | 'emissions' | 'hex' | 'live' | 'dtc' | 'graph' | 'terminal' | 'advanced' | 'prototype' | 'eeprom' | 'coding' | 'immo' | 'service' | 'pmi' | 'oemflash' | 'oemflasher' | 'adas' | 'injectors' | 'topology' | 'tech2' | 'proxy' | 'bms' | 'epb' | 'sas' | 'dpf' | 'vcx-nano' | 'dealership'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'analyzer' | 'scanner' | 'actuators' | 'emissions' | 'hex' | 'live' | 'dtc' | 'graph' | 'terminal' | 'advanced' | 'prototype' | 'eeprom' | 'coding' | 'immo' | 'service' | 'pmi' | 'oemflash' | 'oemflasher' | 'adas' | 'injectors' | 'topology' | 'tech2' | 'proxy' | 'bms' | 'epb' | 'sas' | 'dpf' | 'vcx-nano' | 'dealership' | 'bcm-program' | 'delphi' | 'seed-key'>('dashboard');
   
   // J2534 State
   const [j2534Client, setJ2534Client] = useState<IJ2534 | null>(null);
@@ -87,19 +90,25 @@ export default function App() {
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const isWebSerialSupported = ('serial' in navigator) || (!!window.electron?.serial);
 
-  const addLog = (message: string, type: LogEntry['type'] = 'info') => {
-    setLogs(prev => [...prev, {
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: Date.now(),
-      message,
-      type
-    }]);
+  const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
+    setLogs(prev => {
+      const newLogs = [...prev, {
+        id: Math.random().toString(36).substr(2, 9),
+        timestamp: Date.now(),
+        message,
+        type
+      }];
+      if (newLogs.length > 200) {
+        return newLogs.slice(newLogs.length - 200);
+      }
+      return newLogs;
+    });
 
     if (type === 'error') {
       setLastError(message);
       setStatus('error');
     }
-  };
+  }, []);
 
   useEffect(() => {
     addLog('VCX Nano Professional Suite initialized.', 'info');
@@ -793,6 +802,27 @@ export default function App() {
                   color="text-blue-500"
                 />
                 <SidebarButton 
+                  active={activeTab === 'bcm-program'} 
+                  onClick={() => setActiveTab('bcm-program')} 
+                  icon={Cpu} 
+                  label="BCM Programming" 
+                  color="text-indigo-400"
+                />
+                <SidebarButton 
+                  active={activeTab === 'delphi'} 
+                  onClick={() => setActiveTab('delphi')} 
+                  icon={Settings2} 
+                  label="Delphi Tools" 
+                  color="text-sky-400"
+                />
+                <SidebarButton 
+                  active={activeTab === 'seed-key'} 
+                  onClick={() => setActiveTab('seed-key')} 
+                  icon={Key} 
+                  label="Seed/Key Calc" 
+                  color="text-yellow-400"
+                />
+                <SidebarButton 
                   active={activeTab === 'oemflash'} 
                   onClick={() => setActiveTab('oemflash')} 
                   icon={Zap} 
@@ -978,7 +1008,7 @@ export default function App() {
                 <AdvancedPanel isConnected={status === 'connected'} onSendCommand={handleTerminalSend} />
             )}
             {activeTab === 'prototype' && (
-                <PrototypePanel isConnected={status === 'connected'} onSendCommand={handleTerminalSend} />
+                <PrototypePanel isConnected={status === 'connected'} onSendCommand={handleTerminalSend} logs={logs} addLog={addLog} />
             )}
             {activeTab === 'dashboard' && (
                 <DashboardPanel 
@@ -1061,6 +1091,15 @@ export default function App() {
             {activeTab === 'dealership' && (
                 <DealershipToolsPanel isConnected={status === 'connected'} />
             )}
+            {activeTab === 'bcm-program' && (
+                <BcmProgrammingPanel isConnected={status === 'connected'} onSendCommand={handleTerminalSend} addLog={addLog} />
+            )}
+            {activeTab === 'delphi' && (
+                <DelphiToolsPanel isConnected={status === 'connected'} onSendCommand={handleTerminalSend} addLog={addLog} />
+            )}
+            {activeTab === 'seed-key' && (
+                <SeedKeyPanel />
+            )}
         </div>
         <div className="h-64 p-4 pt-0 min-h-0">
             <Logger logs={logs} />
@@ -1094,7 +1133,7 @@ export default function App() {
   );
 }
 
-function SidebarButton({ active, onClick, icon: Icon, label, color }: { active: boolean, onClick: () => void, icon: any, label: string, color: string }) {
+const SidebarButton = memo(function SidebarButton({ active, onClick, icon: Icon, label, color }: { active: boolean, onClick: () => void, icon: any, label: string, color: string }) {
   return (
     <button 
       onClick={onClick}
@@ -1109,5 +1148,5 @@ function SidebarButton({ active, onClick, icon: Icon, label, color }: { active: 
       {active && <div className="ml-auto w-1 h-4 bg-vcx-blue rounded-full" />}
     </button>
   );
-}
+}, (prevProps, nextProps) => prevProps.active === nextProps.active);
 

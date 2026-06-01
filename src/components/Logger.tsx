@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, memo } from 'react';
 import { LogEntry } from '../types';
 import { Terminal } from 'lucide-react';
 
@@ -6,7 +6,7 @@ interface LoggerProps {
   logs: LogEntry[];
 }
 
-export default function Logger({ logs }: LoggerProps) {
+const Logger = memo(function Logger({ logs }: LoggerProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,4 +44,6 @@ export default function Logger({ logs }: LoggerProps) {
       </div>
     </div>
   );
-}
+});
+
+export default Logger;

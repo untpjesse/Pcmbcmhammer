@@ -17,9 +17,7 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "build": {
-    "npmRebuild": true,
-    "buildDependenciesFromSource": true,
-    "nodeGypRebuild": true,
+    "npmRebuild": false,
     "appId": "com.bcmhammer.app",
     "productName": "VCX Nano Pro",
     "directories": {

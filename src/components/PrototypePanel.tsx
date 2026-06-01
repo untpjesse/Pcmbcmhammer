@@ -1,16 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Beaker, Play, Square, FastForward, TerminalSquare, AlertTriangle, Cpu } from 'lucide-react';
 
+import { LogEntry } from '../types';
+
 interface PrototypePanelProps {
   isConnected: boolean;
   onSendCommand: (hexString: string) => void;
+  logs: LogEntry[];
+  addLog: (message: string, type?: 'info'|'success'|'warning'|'error') => void;
 }
 
-export function PrototypePanel({ isConnected, onSendCommand }: PrototypePanelProps) {
+export function PrototypePanel({ isConnected, onSendCommand, logs, addLog }: PrototypePanelProps) {
   // Script Runner State
-  const [script, setScript] = useState('10 03\n27 01\n28 03 01\n85 01 02');
+  const [script, setScript] = useState('// Advanced Diagnostic Scripting\n// SEND <hex> - send command\n// DELAY <ms> - wait before next\n// WAIT_FOR <hex> <ms> - wait for string in RX\n\nSEND 10 03\nDELAY 500\nSEND 27 01\nWAIT_FOR 67 01 2000\nDELAY 100\nSEND 28 03 01');
   const [isRunningScript, setIsRunningScript] = useState(false);
   const scriptAbortController = useRef<AbortController | null>(null);
+
+  const logsRef = useRef(logs);
+  useEffect(() => {
+    logsRef.current = logs;
+  }, [logs]);
 
   // Fuzzer State
   const [fuzzId, setFuzzId] = useState('7E0');
@@ -29,13 +38,71 @@ export function PrototypePanel({ isConnected, onSendCommand }: PrototypePanelPro
     const signal = scriptAbortController.current.signal;
 
     const lines = script.split('\n').filter(l => l.trim().length > 0 && !l.trim().startsWith('//'));
+    addLog('Starting Diagnostic Script...', 'info');
     
     try {
       for (const line of lines) {
         if (signal.aborted) break;
-        onSendCommand(line.trim());
-        // Wait 500ms between commands
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const cmd = line.trim().toUpperCase();
+        
+        if (cmd.startsWith('DELAY ')) {
+          const ms = parseInt(cmd.substring(6).trim(), 10) || 0;
+          await new Promise(resolve => setTimeout(resolve, ms));
+        } else if (cmd.startsWith('WAIT_FOR ')) {
+          const parts = cmd.substring(9).trim().split(/\s+/);
+          const timeoutMs = parseInt(parts.pop() || '1000', 10);
+          const pattern = parts.join(' ');
+          
+          if (!pattern) continue;
+          
+          const startLogIndex = logsRef.current.length;
+          let found = false;
+          let timeoutId: NodeJS.Timeout;
+          
+          await new Promise<void>((resolve) => {
+            const checkInterval = setInterval(() => {
+              if (signal.aborted) {
+                clearInterval(checkInterval);
+                clearTimeout(timeoutId);
+                resolve();
+                return;
+              }
+              for (let i = startLogIndex; i < logsRef.current.length; i++) {
+                const log = logsRef.current[i];
+                if (log.message.startsWith('RX') && log.message.toUpperCase().includes(pattern)) {
+                  found = true;
+                  clearInterval(checkInterval);
+                  clearTimeout(timeoutId);
+                  resolve();
+                  return;
+                }
+              }
+            }, 50);
+
+            timeoutId = setTimeout(() => {
+              clearInterval(checkInterval);
+              resolve();
+            }, timeoutMs);
+          });
+          
+          if (!found && !signal.aborted) {
+            addLog(`Script WAIT_FOR timeout on pattern: ${pattern}`, 'error');
+            addLog('Aborting script due to condition failure.', 'error');
+            break;
+          }
+        } else if (cmd.startsWith('SEND ')) {
+          const hex = cmd.substring(5).trim();
+          if (hex) onSendCommand(hex);
+        } else {
+          // Assume raw hex if no command prefix
+          onSendCommand(cmd);
+          await new Promise(resolve => setTimeout(resolve, 50)); // small delay to allow UI to breathe
+        }
+      }
+      if (!signal.aborted) {
+         addLog('Diagnostic Script complete.', 'success');
+      } else {
+         addLog('Diagnostic Script aborted.', 'warning');
       }
     } finally {
       setIsRunningScript(false);
@@ -117,11 +184,11 @@ export function PrototypePanel({ isConnected, onSendCommand }: PrototypePanelPro
 
       <div className="p-4 flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Macro / Scripting Engine */}
+        {/* Diagnostic Scripting Engine */}
         <div className="space-y-4 lg:col-span-2 xl:col-span-1">
           <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider flex items-center">
             <TerminalSquare className="w-4 h-4 mr-2" />
-            Macro Scripting Engine
+            Diagnostic Scripting Engine
           </h3>
           
           <div className="bg-zinc-950/50 p-4 rounded-lg border border-zinc-800 flex flex-col h-64">
@@ -129,8 +196,8 @@ export function PrototypePanel({ isConnected, onSendCommand }: PrototypePanelPro
               value={script}
               onChange={(e) => setScript(e.target.value)}
               disabled={isRunningScript || !isConnected}
-              className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-sm text-zinc-300 focus:outline-none focus:border-pink-500 font-mono resize-none mb-4"
-              placeholder="// Enter hex commands, one per line&#10;10 03&#10;27 01"
+              className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-sm text-zinc-300 focus:outline-none focus:border-pink-500 font-mono resize-none mb-4 whitespace-pre"
+              placeholder="// Enter script commands&#10;SEND 10 03&#10;WAIT_FOR 50 03 1000&#10;DELAY 500"
             />
             <div className="flex space-x-3">
               {!isRunningScript ? (
